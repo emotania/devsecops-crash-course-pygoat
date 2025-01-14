@@ -36,11 +36,36 @@ jobs:
    steps:
    - name: Checkout code
      uses: actions/checkout@v2
-
    - name: Set up Docker
      uses: docker-practice/actions-setup-docker@v1
      with:
-      docker_version: '20.10.11'
+      docker_version: '20.10.11'  # Specify a compatible Docker version
+   
+   - name: Check Docker systemd status
+     run: sudo systemctl status docker
+
+   - name: Check Docker version
+     run: docker --version
+
+   - name: Create daemon.json file
+     run: |
+      echo '{
+       "storage-driver": "overlay2",
+       "log-driver": "json-file",
+       "log-opts": {
+       "max-size": "10m",
+       "max-file": "3"
+            },
+        "exec-opts": ["native.cgroupdriver=systemd"],
+        "iptables": false,
+        "ip-masq": false
+        }' | sudo tee /etc/docker/daemon.json
+   
+   - name: Restart Docker service
+     run: sudo systemctl restart docker
+
+   - name: Verify daemon.json content
+     run: sudo cat /etc/docker/daemon.json
 
    - name: Build Docker Image
      run: docker build -f Dockerfile -t myapp:latest .
